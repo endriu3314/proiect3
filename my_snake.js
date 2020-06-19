@@ -2,21 +2,29 @@ let canvas,
   ctx,
   apple_x,
   apple_y,
+  bomb_x,
+  bomb_y,
   go_left = false,
   go_right = true,
   go_up = false,
   go_down = false,
   snake_length,
-  alive = true;
+  alive = true,
+  bomb_count = 0;
 
-const CANVAS_HEIGHT = document.documentElement.clientHeight - 10;
-const CANVAS_WIDTH = document.documentElement.clientWidth - 10;
+/* const CANVAS_HEIGHT = document.documentElement.clientHeight - 10;
+const CANVAS_WIDTH = document.documentElement.clientWidth - 10; */
+const CANVAS_HEIGHT = 300;
+const CANVAS_WIDTH = 300;
 const DOT_SIZE = 10;
 const MAX_DOTS = Math.round(
   (CANVAS_HEIGHT * CANVAS_WIDTH) / (DOT_SIZE * DOT_SIZE)
 );
 const MAX_RAND = generateMaxRand();
 const GAME_LOOP_DELAY = 100;
+
+const BOMB_RADIUS = 10;
+const BOMB_LOOP_DELAY = 5000;
 
 let x_snake = new Array(MAX_DOTS);
 let y_snake = new Array(MAX_DOTS);
@@ -55,7 +63,13 @@ const init = () => {
   generateApple();
   draw();
 
+  generateBomb();
+
+  //generateBomb();
+  //bombExplosion();
+
   gameLoop();
+  bombLoop();
 };
 
 const gameLoop = () => {
@@ -64,9 +78,17 @@ const gameLoop = () => {
     checkCollision();
     checkAppleCollision();
     draw();
+    console.log('gameloop');
     setTimeout('gameLoop()', GAME_LOOP_DELAY);
 
     document.addEventListener('keydown', setMovement);
+  }
+};
+
+const bombLoop = () => {
+  if (alive == true) {
+    bombExplosion();
+    setTimeout('bombLoop()', BOMB_LOOP_DELAY);
   }
 };
 
@@ -87,6 +109,19 @@ const draw = () => {
       } else {
         ctx.fillStyle = 'green';
         ctx.fillRect(x_snake[i], y_snake[i], DOT_SIZE, DOT_SIZE);
+      }
+    }
+
+    //draw bomb
+    for (let i = bomb_x - BOMB_RADIUS; i < bomb_x + BOMB_RADIUS + 1; i++) {
+      for (let j = bomb_y - BOMB_RADIUS; j < bomb_y + BOMB_RADIUS + 1; j++) {
+        if (i == bomb_x && j == bomb_y) {
+          ctx.fillStyle = 'rgba(255, 215, 0, 0.5)';
+          ctx.fillRect(i, j, DOT_SIZE, DOT_SIZE);
+        } else {
+          ctx.fillStyle = 'rgba(255, 215, 0, 0.5)';
+          ctx.fillRect(i, j, DOT_SIZE, DOT_SIZE);
+        }
       }
     }
   } else {
@@ -203,6 +238,52 @@ const checkAppleCollision = () => {
     console.log('grow');
     generateApple();
   }
+};
+
+const generateBomb = () => {
+  bomb_x =
+    Math.ceil(
+      Math.floor(
+        Math.random() * Math.floor(CANVAS_WIDTH - DOT_SIZE * BOMB_RADIUS)
+      ) / DOT_SIZE
+    ) * 10;
+  bomb_y =
+    Math.ceil(
+      Math.floor(
+        Math.random() * Math.floor(CANVAS_HEIGHT - DOT_SIZE * BOMB_RADIUS)
+      ) / DOT_SIZE
+    ) * 10;
+
+  for (i = 0; i < snake_length; i++) {
+    if (bomb_x == x_snake[i] && bomb_y == y_snake[i]) {
+      generateBomb();
+    }
+  }
+
+  console.log('bomb', bomb_x, bomb_y);
+};
+
+const bombExplosion = () => {
+  /**
+    for (i=1;i<n;i++)
+    for(j=0;j<i-1;j++)
+    <prelucrează a[i][j]>
+   */
+  /* for (let i = bomb_x; i < bomb_x + BOMB_RADIUS + 1; i++) {
+    for (let j = bomb_y; j < bomb_y + BOMB_RADIUS + 1; j++) {
+      console.log(i, j);
+    }
+  } */
+  for (let i = bomb_x - BOMB_RADIUS; i < bomb_x + BOMB_RADIUS + 1; i++) {
+    for (let j = bomb_y - BOMB_RADIUS; j < bomb_y + BOMB_RADIUS + 1; j++) {
+      if (x_snake[0] == i || y_snake[0] == j) {
+        alive = false;
+        endGame();
+      }
+    }
+  }
+
+  generateBomb();
 };
 
 const endGame = () => {
