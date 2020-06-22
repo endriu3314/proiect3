@@ -13,10 +13,10 @@ let canvas,
   bomb_count = 0,
   bomb_time_remaining = 0;
 
-/* const CANVAS_HEIGHT = document.documentElement.clientHeight - 10;
-const CANVAS_WIDTH = document.documentElement.clientWidth - 10; */
-const CANVAS_HEIGHT = 300;
-const CANVAS_WIDTH = 300;
+const CANVAS_HEIGHT = document.documentElement.clientHeight - 10;
+const CANVAS_WIDTH = document.documentElement.clientWidth - 10;
+/* const CANVAS_HEIGHT = 300;
+const CANVAS_WIDTH = 300; */
 const DOT_SIZE = 10;
 const MAX_DOTS = Math.round(
   (CANVAS_HEIGHT * CANVAS_WIDTH) / (DOT_SIZE * DOT_SIZE)
@@ -53,11 +53,11 @@ function append(parent, child) {
 
 //redefined timeout for bomb countdown
 (function () {
-  var nativeSetTimeout = window.setTimeout;
+  let nativeSetTimeout = window.setTimeout;
 
   window.bindTimeout = function (listener, interval) {
     function setTimeout(code, delay) {
-      var elapsed = 0,
+      let elapsed = 0,
         h;
 
       h = window.setInterval(function () {
