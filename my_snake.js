@@ -10,7 +10,8 @@ let canvas,
   go_down = false,
   snake_length,
   alive = true,
-  bomb_count = 0;
+  bomb_count = 0,
+  bomb_time_remaining = 0;
 
 /* const CANVAS_HEIGHT = document.documentElement.clientHeight - 10;
 const CANVAS_WIDTH = document.documentElement.clientWidth - 10; */
@@ -50,6 +51,31 @@ function append(parent, child) {
   return parent;
 }
 
+//redefined timeout for bomb countdown
+(function () {
+  var nativeSetTimeout = window.setTimeout;
+
+  window.bindTimeout = function (listener, interval) {
+    function setTimeout(code, delay) {
+      var elapsed = 0,
+        h;
+
+      h = window.setInterval(function () {
+        elapsed += interval;
+        if (elapsed < delay) {
+          listener(delay - elapsed);
+        } else {
+          window.clearInterval(h);
+        }
+      }, interval);
+      return nativeSetTimeout(code, delay);
+    }
+
+    window.setTimeout = setTimeout;
+    setTimeout._native = nativeSetTimeout;
+  };
+})();
+
 const init = () => {
   canvas = dom('CANVAS');
   canvas.width = CANVAS_WIDTH;
@@ -63,13 +89,8 @@ const init = () => {
   generateApple();
   draw();
 
-  generateBomb();
-
-  //generateBomb();
-  //bombExplosion();
-
-  gameLoop();
   bombLoop();
+  gameLoop();
 };
 
 const gameLoop = () => {
@@ -89,6 +110,12 @@ const bombLoop = () => {
   if (alive == true) {
     bombExplosion();
     setTimeout('bombLoop()', BOMB_LOOP_DELAY);
+    window.bindTimeout(function (t) {
+      bomb_time_remaining = t;
+    }, GAME_LOOP_DELAY);
+    window.setTimeout(function (t) {
+      console.log(t + 'All done.');
+    }, BOMB_LOOP_DELAY);
   }
 };
 
@@ -113,10 +140,18 @@ const draw = () => {
     }
 
     //draw bomb
-    for (let i = bomb_x - BOMB_RADIUS; i < bomb_x + BOMB_RADIUS + 1; i++) {
-      for (let j = bomb_y - BOMB_RADIUS; j < bomb_y + BOMB_RADIUS + 1; j++) {
+    for (
+      let i = bomb_x - BOMB_RADIUS;
+      i < bomb_x + BOMB_RADIUS + 1;
+      i = i + DOT_SIZE
+    ) {
+      for (
+        let j = bomb_y - BOMB_RADIUS;
+        j < bomb_y + BOMB_RADIUS + 1;
+        j = j + DOT_SIZE
+      ) {
         if (i == bomb_x && j == bomb_y) {
-          ctx.fillStyle = 'rgba(255, 215, 0, 0.5)';
+          ctx.fillStyle = 'rgba(255, 215, 0, 1)';
           ctx.fillRect(i, j, DOT_SIZE, DOT_SIZE);
         } else {
           ctx.fillStyle = 'rgba(255, 215, 0, 0.5)';
@@ -124,6 +159,13 @@ const draw = () => {
         }
       }
     }
+
+    //bomb timer
+    ctx.fillStyle = 'blue';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'normal bold 18px serif';
+
+    ctx.fillText('Bomb timer: ' + bomb_time_remaining, CANVAS_WIDTH - 150, 18);
   } else {
     endGame();
   }
@@ -244,13 +286,13 @@ const generateBomb = () => {
   bomb_x =
     Math.ceil(
       Math.floor(
-        Math.random() * Math.floor(CANVAS_WIDTH - DOT_SIZE * BOMB_RADIUS)
+        Math.random() * Math.floor(CANVAS_WIDTH - DOT_SIZE * BOMB_RADIUS + 5)
       ) / DOT_SIZE
     ) * 10;
   bomb_y =
     Math.ceil(
       Math.floor(
-        Math.random() * Math.floor(CANVAS_HEIGHT - DOT_SIZE * BOMB_RADIUS)
+        Math.random() * Math.floor(CANVAS_HEIGHT - DOT_SIZE * BOMB_RADIUS + 5)
       ) / DOT_SIZE
     ) * 10;
 
@@ -264,20 +306,22 @@ const generateBomb = () => {
 };
 
 const bombExplosion = () => {
-  /**
-    for (i=1;i<n;i++)
-    for(j=0;j<i-1;j++)
-    <prelucrează a[i][j]>
-   */
-  /* for (let i = bomb_x; i < bomb_x + BOMB_RADIUS + 1; i++) {
-    for (let j = bomb_y; j < bomb_y + BOMB_RADIUS + 1; j++) {
-      console.log(i, j);
-    }
-  } */
-  for (let i = bomb_x - BOMB_RADIUS; i < bomb_x + BOMB_RADIUS + 1; i++) {
-    for (let j = bomb_y - BOMB_RADIUS; j < bomb_y + BOMB_RADIUS + 1; j++) {
-      if (x_snake[0] == i || y_snake[0] == j) {
+  for (
+    let i = bomb_x - BOMB_RADIUS;
+    i < bomb_x + BOMB_RADIUS + 1;
+    i = i + DOT_SIZE
+  ) {
+    for (
+      let j = bomb_y - BOMB_RADIUS;
+      j < bomb_y + BOMB_RADIUS + 1;
+      j = j + DOT_SIZE
+    ) {
+      if (x_snake[0] == i && y_snake[0] == j) {
         alive = false;
+        console.log('bomb', i, j, 'snake', x_snake[0], y_snake[0]);
+        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        canvas.style.border = '1px solid #000000';
+
         endGame();
       }
     }
